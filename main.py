@@ -1,7 +1,36 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from openai import OpenAI
+import os
+import json
+
+# OpenAI istemcisi
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# FastAPI uygulaması
+app = FastAPI()
+
+# CORS ayarı – tüm domain varyasyonları
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://batuhandurmaz.com",
+        "http://batuhandurmaz.com",
+        "https://www.batuhandurmaz.com",
+        "http://www.batuhandurmaz.com"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Girdi modeli
 class KeywordInput(BaseModel):
     keyword: str
-    language: str = "Türkçe"
+    language: str = "Türkçe"  # Varsayılan dil
 
+# Ana endpoint
 @app.post("/analyze")
 async def analyze_keyword(data: KeywordInput):
     try:
@@ -41,9 +70,15 @@ Kelime: {data.keyword}
             temperature=0.7
         )
 
+        # OpenAI yanıtı
         content = completion.choices[0].message.content
+
+        # Eğer yanıt içinde ```json veya ``` varsa temizle
         content = content.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+
+        # JSON olarak parse edip gönder
         return json.loads(content)
 
     except Exception as e:
-        return {"error": str(e)}
+        # Hata durumunda geri dönüş
+        raise HTTPException(status_code=500, detail=str(e))
