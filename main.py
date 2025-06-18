@@ -10,26 +10,30 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
-# Sadece batuhandurmaz.com için CORS izinleri
+# Tüm domain varyasyonlarını tanımla (www ile olanlar dahil)
 origins = [
     "https://batuhandurmaz.com",
-    "http://batuhandurmaz.com"
+    "http://batuhandurmaz.com",
+    "https://www.batuhandurmaz.com",
+    "http://www.batuhandurmaz.com"
 ]
 
+# CORS middleware: OPTIONS dahil tüm istek türlerine izin ver
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["POST"],
+    allow_methods=["*"],  # ← POST ve OPTIONS dahil tüm methodlara izin verildi
     allow_headers=["*"],
 )
 
+# Anahtar kelime input modeli
 class KeywordRequest(BaseModel):
     keyword: str
 
 @app.post("/analyze")
 async def analyze(request: Request, body: KeywordRequest):
-    # Güvenlik için origin kontrolü
+    # Origin güvenlik kontrolü
     origin = request.headers.get("origin")
     if origin not in origins:
         raise HTTPException(status_code=403, detail="Forbidden origin")
@@ -49,7 +53,7 @@ async def analyze(request: Request, body: KeywordRequest):
             temperature=0.7
         )
 
-        # Dönen yanıt string JSON ise dict'e çevir
+        # Yanıtı JSON formatında döndür
         return json.loads(completion.choices[0].message.content)
 
     except Exception as e:
