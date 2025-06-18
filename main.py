@@ -3,17 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 import openai
+import json
 
-# Environment variable üzerinden API anahtarını al
+# OpenAI API anahtarını ortam değişkeninden al
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
-# Sadece batuhandurmaz.com'dan gelen istekler için CORS izinleri
+# Sadece batuhandurmaz.com için CORS izinleri
 origins = [
     "https://batuhandurmaz.com",
     "http://batuhandurmaz.com"
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -27,7 +29,7 @@ class KeywordRequest(BaseModel):
 
 @app.post("/analyze")
 async def analyze(request: Request, body: KeywordRequest):
-    # Ekstra kontrol: Origin başlığı
+    # Güvenlik için origin kontrolü
     origin = request.headers.get("origin")
     if origin not in origins:
         raise HTTPException(status_code=403, detail="Forbidden origin")
@@ -36,6 +38,7 @@ async def analyze(request: Request, body: KeywordRequest):
         f"Analyze the keyword '{body.keyword}' and provide JSON with keys: "
         "fanOutQueries, followUpQueries, entities, lsiKeywords, longTailQuestions"
     )
+
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-4o-mini",
@@ -45,7 +48,9 @@ async def analyze(request: Request, body: KeywordRequest):
             ],
             temperature=0.7
         )
-        # API'den dönen JSON içeriğini doğrudan return et
-        return completion.choices[0].message.content
+
+        # Dönen yanıt string JSON ise dict'e çevir
+        return json.loads(completion.choices[0].message.content)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
