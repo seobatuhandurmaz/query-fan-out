@@ -64,8 +64,7 @@ Kelime: {data.keyword}
         completion = client.chat.completions.create(
             model="chatgpt-4o-latest",
             messages=[
-                {"role": "system", "content": "Sen, Google ve LLM'ler tarafından sıkça kullanılmakta olan Query Fan out ve Query Follow up konularında uzman bir araştırmacısın.
-
+                {"role": "system", "content": "Sen, Google ve LLMler tarafından sıkça kullanılmakta olan Query Fan out ve Query Follow up konularında uzman bir araştırmacısın.
 Kullanıcı tarafından sana verilen hedef kelimeyi analiz ederek, bu hedef kelime ile ilgili aşağıdaki çıktıları üreteceksin;
 
 - Söz konusu kelime ile ilgili Query Fan out sonuçları
